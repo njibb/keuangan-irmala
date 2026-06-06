@@ -2,7 +2,7 @@ import { prisma } from "../../lib/prisma";
 import ExportButton from "./exportbutton";
 import MonthFilter from "./monthfilter";
 import Link from "next/link";
-import NavbarUser from "./../components/navbaruser"; // Pastikan path ini benar!
+import NavbarUser from "\./../components/navbaruser";
 
 export default async function LaporanPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const params = await searchParams;
@@ -24,35 +24,30 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
   const hasTransactions = transactions.length > 0;
 
   return (
-    // PENTING: Padding 'p-6' dihapus dari main agar Header bisa menyentuh ujung layar
     <main className="min-h-screen bg-gray-50 text-gray-800 font-sans">
       
-      {/* ============================== */}
-      {/* HEADER NAVIGASI GLOBAL         */}
-      {/* ============================== */}
+      {/* Header Navigasi */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center shadow-sm mb-8 z-50 relative">
         <Link href="/" className="text-xl font-bold text-emerald-700 hover:opacity-80 transition-opacity">
           Keuangan Irmala
         </Link>
         <NavbarUser name="Admin Bendahara" role="BENDAHARA" initial="A" />
-        
       </div>
 
-      {/* Konten Laporan */}
-      
-      <div className="max-w-4xl mx-auto px-6 pb-12">
-          <Link 
-                  href="/" 
-                  className="inline-flex items-center text-sm font-semibold text-emerald-600 hover:text-emerald-700 mb-6 transition-colors"
-                >
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                  Kembali ke Halaman Utama
-                </Link>
+      <div className="max-w-4xl mx-auto px-4 md:px-6 pb-12">
+        <Link 
+          href="/" 
+          className="inline-flex items-center text-sm font-semibold text-emerald-600 hover:text-emerald-700 mb-6 transition-colors"
+        >
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          Kembali ke Halaman Utama
+        </Link>
+
         <h1 className="text-2xl font-bold mb-6 text-gray-900">Laporan Bulanan</h1>
 
         <MonthFilter />
 
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-900">Data Transaksi {displayMonth}</h2>
           
           {hasTransactions && (
@@ -62,26 +57,34 @@ export default async function LaporanPage({ searchParams }: { searchParams: Prom
 
         {hasTransactions ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
-                <tr>
-                  <th className="p-4">Tanggal</th>
-                  <th className="p-4">Keterangan</th>
-                  <th className="p-4 text-right">Masuk</th>
-                  <th className="p-4 text-right">Keluar</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {transactions.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="p-4 text-gray-600">{t.date.toLocaleDateString('id-ID')}</td>
-                    <td className="p-4 font-medium text-gray-900">{t.description}</td>
-                    <td className="p-4 text-right text-emerald-600 font-semibold">{t.type === 'IN' ? t.amount.toLocaleString('id-ID') : '-'}</td>
-                    <td className="p-4 text-right text-red-600 font-semibold">{t.type === 'OUT' ? t.amount.toLocaleString('id-ID') : '-'}</td>
+            
+            {/* KUNCI FIX-NYA DI SINI: Bungkus tabel dengan overflow-x-auto */}
+            <div className="overflow-x-auto">
+              
+              {/* Tambahkan whitespace-nowrap supaya teks tidak bertumpuk/gepeng di layar kecil */}
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                  <tr>
+                    <th className="p-4">Tanggal</th>
+                    <th className="p-4">Keterangan</th>
+                    <th className="p-4 text-right">Masuk</th>
+                    <th className="p-4 text-right">Keluar</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {transactions.map((t) => (
+                    <tr key={t.id} className="hover:bg-gray-50">
+                      <td className="p-4 text-gray-600">{t.date.toLocaleDateString('id-ID')}</td>
+                      <td className="p-4 font-medium text-gray-900">{t.description}</td>
+                      <td className="p-4 text-right text-emerald-600 font-semibold">{t.type === 'IN' ? t.amount.toLocaleString('id-ID') : '-'}</td>
+                      <td className="p-4 text-right text-red-600 font-semibold">{t.type === 'OUT' ? t.amount.toLocaleString('id-ID') : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Akhir dari container overflow */}
+
           </div>
         ) : (
           <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 flex flex-col items-center justify-center text-center">
