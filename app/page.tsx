@@ -1,63 +1,85 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]/route";
+import { prisma } from "../lib/prisma";
+import NavbarUser from './components/navbaruser';
 
-export default function Home() {
+// Helper untuk format Rupiah
+const formatIDR = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+};
+
+export default async function Dashboard() {
+  const session = await getServerSession(authOptions);
+  const transactions = await prisma.transaction.findMany({ orderBy: { date: 'desc' } }) || [];
+
+  const totalPemasukan = transactions.filter(t => t.type === 'IN').reduce((sum, t) => sum + t.amount, 0);
+  const totalPengeluaran = transactions.filter(t => t.type === 'OUT').reduce((sum, t) => sum + t.amount, 0);
+  const saldoSekarang = totalPemasukan - totalPengeluaran;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+      <nav className="bg-white p-6 flex justify-between items-center border-b border-emerald-100 sticky top-0 z-10">
+        <h1 className="text-xl font-bold text-emerald-700">Keuangan Irmala</h1>
+        {session ? (
+           <NavbarUser 
+             name={session.user?.name} 
+             role={(session.user as any).role} 
+             initial={session.user?.name?.charAt(0)} 
+           />
+        ) : <Link href="/login" className="text-emerald-600 font-semibold">Login</Link>}
+      </nav>
+      
+      <main className="max-w-5xl mx-auto p-6">
+        {/* Tombol Tambah */}
+        <div className="mb-8">
+          <Link href="/tambah" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm">+ Catat Transaksi</Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Kartu Ringkasan */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm">
+            <p className="text-sm font-medium text-gray-500">Total Saldo Kas</p>
+            <h3 className="text-3xl font-bold text-emerald-700">{formatIDR(saldoSekarang)}</h3>
+          </div>
+          <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+            <p className="text-sm font-medium text-emerald-600">Pemasukan</p>
+            <h3 className="text-2xl font-bold text-emerald-800">{formatIDR(totalPemasukan)}</h3>
+          </div>
+          <div className="bg-red-50 p-6 rounded-2xl border border-red-100 shadow-sm">
+            <p className="text-sm font-medium text-red-600">Pengeluaran</p>
+            <h3 className="text-2xl font-bold text-red-800">{formatIDR(totalPengeluaran)}</h3>
+          </div>
+        </div>
+
+        {/* Tabel */}
+        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 text-gray-500 text-sm">
+              <tr>
+                <th className="px-6 py-3">Tanggal</th>
+                <th className="px-6 py-3">Keterangan</th>
+                <th className="px-6 py-3">Tipe</th>
+                <th className="px-6 py-3 text-right">Nominal</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-emerald-50">
+              {transactions.map((trx) => (
+                <tr key={trx.id}>
+                  <td className="px-6 py-4 text-sm">{new Date(trx.date).toLocaleDateString('id-ID')}</td>
+                  <td className="px-6 py-4 text-sm font-medium">{trx.description}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${trx.type === 'IN' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      {trx.type === 'IN' ? 'Masuk' : 'Keluar'}
+                    </span>
+                  </td>
+                  <td className={`px-6 py-4 text-sm font-bold text-right ${trx.type === 'IN' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {trx.type === 'IN' ? '+' : '-'}{formatIDR(trx.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </main>
     </div>
