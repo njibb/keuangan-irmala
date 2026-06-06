@@ -1,116 +1,126 @@
 'use client';
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { simpanTransaksi } from '../actions/transaction';
 
-export default function TambahTransaksi() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function NavbarUser({ name, role, initial }: any) {
+  const [isOpen, setIsOpen] = useState(false); // State untuk dropdown profil desktop
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State untuk hamburger menu mobile
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fungsi yang dijalankan saat tombol "Simpan" ditekan
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const formData = new FormData(event.currentTarget);
-      
-      // Panggil Server Action
-      await simpanTransaksi(formData);
-      
-      // Jika sukses, arahkan kembali ke halaman utama (Dashboard)
-      router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan transaksi');
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 p-6 font-sans">
-      <div className="max-w-xl mx-auto">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Catat Transaksi</h1>
-            <p className="text-sm text-gray-500 mt-1">Masukkan detail pemasukan atau pengeluaran kas.</p>
-          </div>
-          <Link href="/" className="text-emerald-600 font-medium hover:underline text-sm">
-            Batal
-          </Link>
-        </div>
+    <>
+      {/* ============================== */}
+      {/* TAMPILAN DESKTOP (Sembunyi di HP) */}
+      {/* ============================== */}
+      <div className="hidden md:flex items-center space-x-6 md:space-x-8">
+        <Link 
+          href="/laporan"
+          className="text-sm font-semibold text-gray-600 hover:text-emerald-700 transition-colors"
+        >
+          Laporan Bulanan
+        </Link>
 
-        {/* Form Container */}
-        <div className="bg-white p-8 rounded-3xl border border-emerald-100 shadow-sm">
-          {error && (
-            <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100">
-              {error}
+        <div className="relative" ref={dropdownRef}>
+          <div 
+            onClick={() => setIsOpen(!isOpen)} 
+            className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <div className="flex flex-col text-right">
+              <span className="text-sm font-semibold text-gray-800">{name}</span>
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md self-end mt-0.5">{role}</span>
+            </div>
+            <div className="h-9 w-9 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
+              {initial}
+            </div>
+          </div>
+
+          {isOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
+              >
+                Keluar (Logout)
+              </button>
             </div>
           )}
+        </div>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+      {/* ============================== */}
+      {/* TAMPILAN MOBILE (Hamburger Icon) */}
+      {/* ============================== */}
+      <div className="md:hidden flex items-center">
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="text-gray-800 hover:text-emerald-600 focus:outline-none p-2"
+        >
+          {isMobileMenuOpen ? (
+            // Ikon Silang (X) kalau menu terbuka
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          ) : (
+            // Ikon Hamburger (Garis 3) kalau menu tertutup
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* ============================== */}
+      {/* ISI MENU DROPDOWN MOBILE        */}
+      {/* ============================== */}
+      {isMobileMenuOpen && (
+        <div className="absolute top-[70px] left-0 w-full bg-white border-b border-gray-100 shadow-lg md:hidden z-50">
+          <div className="px-6 py-5 flex flex-col space-y-5">
             
-            {/* Tipe Transaksi (IN / OUT) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Jenis Transaksi</label>
-              <div className="flex gap-4">
-                <label className="flex-1 cursor-pointer">
-                  <input type="radio" name="type" value="IN" className="peer sr-only" defaultChecked />
-                  <div className="p-3 text-center rounded-xl border border-gray-200 bg-gray-50 peer-checked:bg-emerald-50 peer-checked:border-emerald-500 peer-checked:text-emerald-700 font-semibold transition-all">
-                    + Pemasukan
-                  </div>
-                </label>
-                <label className="flex-1 cursor-pointer">
-                  <input type="radio" name="type" value="OUT" className="peer sr-only" />
-                  <div className="p-3 text-center rounded-xl border border-gray-200 bg-gray-50 peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-700 font-semibold transition-all">
-                    - Pengeluaran
-                  </div>
-                </label>
+            {/* Info Profil */}
+            <div className="flex items-center space-x-3 pb-4 border-b border-gray-50">
+              <div className="h-11 w-11 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-base shadow-sm">
+                {initial}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-gray-800">{name}</span>
+                <span className="text-xs font-semibold text-emerald-600 mt-0.5">{role}</span>
               </div>
             </div>
 
-            {/* Tanggal */}
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1.5">Tanggal</label>
-              <input type="date" id="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
+            {/* Menu Laporan Bulanan */}
+            <Link 
+              href="/laporan"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-sm font-semibold text-gray-700 hover:text-emerald-700 flex items-center space-x-3"
+            >
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Laporan Bulanan</span>
+            </Link>
 
-            {/* Keterangan */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">Keterangan</label>
-              <input type="text" id="description" name="description" required placeholder="Contoh: Beli sapu lidi, Infaq hamba Allah..." className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-
-            {/* Kategori */}
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1.5">Kategori</label>
-              <select id="category" name="category" required className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="Operasional">Operasional (Kebersihan, Listrik)</option>
-                <option value="Donasi">Infaq / Donasi</option>
-                <option value="Kegiatan">Acara Kegiatan</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
-            </div>
-
-            {/* Nominal (Amount) */}
-            <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1.5">Nominal (Rp)</label>
-              <input type="number" id="amount" name="amount" required min="1" placeholder="50000" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-lg" />
-            </div>
-
-            {/* Tombol Simpan */}
-            <button type="submit" disabled={isLoading} className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-bold py-3.5 rounded-xl transition-colors shadow-sm">
-              {isLoading ? 'Menyimpan...' : 'Simpan Transaksi'}
+            {/* Tombol Logout */}
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="text-sm font-semibold text-red-600 hover:text-red-700 flex items-center space-x-3 pt-2"
+            >
+              <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+              <span>Keluar (Logout)</span>
             </button>
 
-          </form>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

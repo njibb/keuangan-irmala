@@ -1,7 +1,9 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function NavbarUser({ name, role, initial }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -17,27 +19,45 @@ export default function NavbarUser({ name, role, initial }: any) {
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-        <div className="flex flex-col text-right">
-          <span className="text-sm font-semibold text-gray-800">{name}</span>
-          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">{role}</span>
-        </div>
-        <div className="h-9 w-9 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
-          {initial}
-        </div>
-      </button>
+    // Tambahkan flex container utama untuk membungkus menu dan profil
+    <div className="flex items-center space-x-6 md:space-x-8">
+      
+      {/* Navigasi Biasa di samping Profil */}
+      <Link 
+        href="/laporan"
+        className="text-sm font-semibold text-gray-600 hover:text-emerald-700 transition-colors"
+      >
+        Laporan Bulanan
+      </Link>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-          <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
-          >
-            Keluar (Logout)
-          </button>
+      {/* Area Profil & Dropdown Logout */}
+      <div className="relative" ref={dropdownRef}>
+        <div 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
+        >
+          <div className="flex flex-col text-right">
+            <span className="text-sm font-semibold text-gray-800">{name}</span>
+            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md self-end mt-0.5">{role}</span>
+          </div>
+          <div className="h-9 w-9 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
+            {initial}
+          </div>
         </div>
-      )}
+
+        {/* Dropdown sekarang cuma buat Logout */}
+        {isOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
+            >
+              Keluar (Logout)
+            </button>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

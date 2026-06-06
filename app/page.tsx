@@ -24,6 +24,7 @@ export default async function Dashboard() {
         {session ? (
            <NavbarUser 
              name={session.user?.name} 
+             // eslint-disable-next-line @typescript-eslint/no-explicit-any
              role={(session.user as any).role} 
              initial={session.user?.name?.charAt(0)} 
            />
