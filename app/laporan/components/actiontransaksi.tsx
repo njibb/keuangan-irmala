@@ -17,20 +17,52 @@ export default function ActionTransaksi({ transaksi }: { transaksi: any }) {
 
   const handleDelete = async () => {
     if (!window.confirm('Yakin mau hapus transaksi ini bre?')) return;
-    await fetch('/api/transaksi', { method: 'DELETE', body: JSON.stringify({ id: transaksi.id }) });
-    router.refresh(); // AJAIB: Ini yang bikin Dashboard & Laporan langsung update otomatis!
+    
+    try {
+      const res = await fetch('/api/transaksi', { 
+        method: 'DELETE', 
+        headers: {
+          'Content-Type': 'application/json', // <-- INI PENTING BIAR SERVER NGERTI
+        },
+        body: JSON.stringify({ id: transaksi.id }) 
+      });
+
+      if (res.ok) {
+        router.refresh(); // Langsung update UI kalau sukses
+      } else {
+        alert('Gagal hapus transaksi. Coba cek console!');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error jaringan pas hapus data.');
+    }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await fetch('/api/transaksi', {
-      method: 'PUT',
-      body: JSON.stringify({ id: transaksi.id, description: desc, amount, type, date }),
-    });
-    setIsOpen(false);
-    setIsLoading(false);
-    router.refresh();
+    
+    try {
+      const res = await fetch('/api/transaksi', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json', // <-- INI JUGA PENTING
+        },
+        body: JSON.stringify({ id: transaksi.id, description: desc, amount, type, date }),
+      });
+
+      if (res.ok) {
+        setIsOpen(false);
+        router.refresh(); // Langsung update UI kalau sukses
+      } else {
+        alert('Gagal update transaksi!');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error jaringan pas update data.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
